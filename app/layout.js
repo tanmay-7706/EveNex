@@ -12,8 +12,8 @@ export const metadata = {
   title: "Evenex - Delightful Events Start Here",
   description: "Discover and create amazing events with AI-powered event management",
   icons: {
-    icon: '/logo.jpg',
-    shortcut: '/logo.jpg',
+    icon: ['/favicon.ico', '/logo.jpg'],
+    shortcut: '/favicon.ico',
     apple: '/logo.jpg',
   },
   openGraph: {
