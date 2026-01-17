@@ -11,6 +11,11 @@ export const metadata = {
   metadataBase: new URL('https://evenex.com'),
   title: "Evenex - Delightful Events Start Here",
   description: "Discover and create amazing events with AI-powered event management",
+  icons: {
+    icon: '/logo.jpg',
+    shortcut: '/logo.jpg',
+    apple: '/logo.jpg',
+  },
   openGraph: {
     title: "EveNex - AI-Powered Event Management",
     description: "Create, discover, and manage events with intelligent automation",
