@@ -11,7 +11,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
-[Live Demo](#) • [Documentation](#features) • [Report Bug](#) • [Request Feature](#)
+[Live Demo](https://evenex.vercel.app) • [Documentation](#features) • [Report Bug](#) • [Request Feature](#)
 
 </div>
 

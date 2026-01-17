@@ -8,7 +8,7 @@ import { ConvexClientProvider } from "@/components/convex-client-provider";
 import { Toaster } from "sonner";
 
 export const metadata = {
-  metadataBase: new URL('https://evenex.com'),
+  metadataBase: new URL('https://evenex.vercel.app'),
   title: "Evenex - Delightful Events Start Here",
   description: "Discover and create amazing events with AI-powered event management",
   icons: {
@@ -19,7 +19,7 @@ export const metadata = {
   openGraph: {
     title: "EveNex - AI-Powered Event Management",
     description: "Create, discover, and manage events with intelligent automation",
-    url: "https://evenex.com",
+    url: "https://evenex.vercel.app",
     siteName: "EveNex",
     images: [
       {
