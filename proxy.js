@@ -1,18 +1,20 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
-const isProtectedRoute = createRouteMatcher([
-  "/my-events(.*)",
-  "/create-event(.*)",
-  "/my-tickets(.*)",
+// Define ALL routes that should be publicly accessible
+const isPublicRoute = createRouteMatcher([
+  "/",                          // Landing page
+  "/sign-in(.*)",               // Clerk sign-in
+  "/sign-up(.*)",               // Clerk sign-up
+  "/events(.*)",                // Public event browsing
+  "/explore(.*)",               // Public explore page
+  "/api/webhooks/stripe(.*)",   // Stripe webhooks (must be public)
+  "/api/webhooks/clerk(.*)",    // Clerk webhooks (must be public)
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
-  const { userId } = await auth();
-
-  if (!userId && isProtectedRoute(req)) {
-    const { redirectToSignIn } = await auth();
-    return redirectToSignIn();
+  if (!isPublicRoute(req)) {
+    await auth.protect(); // Redirects to sign-in if not authenticated
   }
 
   return NextResponse.next();

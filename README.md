@@ -4,14 +4,14 @@
 
 ![EveNex Banner](public/evenex.png)
 
-**A modern, full-stack event management platform built with Next.js 15, Convex, and AI**
+**A modern, robust, full-stack event management platform built with Next.js 15, Convex, and AI**
 
 [![Next.js](https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
 [![Convex](https://img.shields.io/badge/Convex-Backend-orange?style=for-the-badge)](https://convex.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
-[Live Demo](https://evenex.vercel.app) • [Documentation](#features) • [Report Bug](#) • [Request Feature](#)
+[Live Demo](https://evenex.vercel.app) • [Features](#-key-features) • [Architecture](#-architecture) • [Getting Started](#-getting-started)
 
 </div>
 
@@ -35,59 +35,52 @@
 
 ## 🌟 Overview
 
-**EveNex** is a production-ready event management platform that combines modern web technologies with AI capabilities to streamline event creation, discovery, and management. Built as a showcase of full-stack development skills, it demonstrates enterprise-level architecture, security best practices, and seamless third-party integrations.
+**EveNex** is a production-ready event management platform that combines modern web technologies with AI capabilities to streamline event creation, discovery, and management. Built as a showcase of full-stack development skills, it demonstrates enterprise-level architecture, robust security best practices, and seamless third-party integrations.
 
 ### 🎯 Problem Statement
 
 Traditional event management platforms lack intelligent automation and often have complex, unintuitive interfaces. EveNex solves this by:
-- **AI-Powered Event Creation**: Generate event details from natural language descriptions
-- **Smart Email Automation**: Instant ticket confirmations with professional HTML templates
-- **Seamless Calendar Integration**: One-click calendar exports (.ics format)
-- **Real-time Updates**: Live event capacity tracking and registration management
+- **AI-Powered Event Creation**: Generate rich event details from natural language descriptions.
+- **Smart Email Automation**: Instant ticket confirmations with professional HTML templates, with resilient fallback handling.
+- **Seamless Calendar Integration**: One-click calendar exports (.ics format).
+- **Real-time Updates**: Live event capacity tracking and registration management.
 
 ---
 
 ## ✨ Key Features
 
 ### 🤖 AI-Powered Event Generation
-- Natural language event creation using OpenRouter API
-- Intelligent categorization and capacity suggestions
-- Supports GPT-3.5-turbo for reliable, cost-effective generation
+- Natural language event creation using OpenRouter API.
+- Intelligent categorization and capacity suggestions.
+- Rate-limited and secured against abuse using Upstash Redis.
 
 ### 🎫 Complete Event Management
-- **Create & Manage Events**: Full CRUD operations with real-time updates
-- **QR Code Ticketing**: Unique QR codes for secure event entry
-- **Capacity Tracking**: Live attendee count with automatic full-event detection
-- **Event Discovery**: Advanced search and filtering by category, location, date
+- **Create & Manage Events**: Full CRUD operations with real-time reactive updates.
+- **QR Code Ticketing**: Cryptographically signed JWT QR codes for highly secure event entry.
+- **Capacity Tracking**: Live attendee count with automatic full-event detection.
+- **Event Analytics**: Detailed organizer dashboard with check-in rates and revenue tracking.
 
 ### 📧 Transactional Email System
-- Professional HTML email templates using Resend
-- Instant ticket confirmation emails
-- Event details and QR code delivery
-- Graceful error handling (registration succeeds even if email fails)
+- Professional HTML email templates using Resend.
+- Instant ticket confirmation emails with QR code delivery.
+- Graceful, non-blocking error handling to ensure checkout flows never fail.
 
-### 📅 Calendar Integration
-- RFC-compliant .ics file generation
-- One-click "Add to Calendar" functionality
-- Compatible with Google Calendar, Outlook, Apple Calendar
-
-### 💳 Payment Infrastructure (Ready)
-- Stripe Connect integration for organizer payouts
-- Platform fee structure (5% configurable)
-- Secure payment processing architecture
+### 💳 Payment Infrastructure
+- Seamless integration with Stripe Checkout for paid events.
+- Idempotent webhook processing to prevent duplicate registrations.
+- Connect destination charges with a 5% configurable platform fee.
 
 ### 🔐 Enterprise-Grade Security
-- Clerk authentication with social login support
-- Rate limiting (5 requests/minute) using Upstash Redis
-- Unique database constraints preventing duplicate URLs/QR codes
-- CSRF protection and secure API endpoints
+- Clerk authentication with social login support and server-side webhook syncing.
+- Route protection powered by Next.js 15 Middleware (`proxy.js`).
+- Rate limiting (5 requests/minute) for AI routes.
+- Strict database indexing and constraints.
 
 ### 🎨 Modern UI/UX
-- Responsive design with Tailwind CSS v4
-- Dark mode support with theme persistence
-- Shadcn UI components for consistency
-- Optimistic UI updates for instant feedback
-- Open Graph meta tags for social media sharing
+- Responsive design with Tailwind CSS v4.
+- Optimistic UI updates for instant feedback.
+- Server/Client component splitting for optimal SEO and interactivity.
+- Open Graph meta tags for rich social media sharing.
 
 ---
 
@@ -101,18 +94,12 @@ Traditional event management platforms lack intelligent automation and often hav
 - **Forms**: React Hook Form + Zod validation
 
 ### Backend
-- **Database**: Convex (Real-time, serverless)
-- **Authentication**: Clerk (OAuth, JWT)
+- **Database**: Convex (Real-time, Serverless)
+- **Authentication**: Clerk (OAuth, JWT, Webhooks)
 - **Email**: Resend (Transactional emails)
-- **Payments**: Stripe Connect
+- **Payments**: Stripe Checkout & Webhooks
 - **AI**: OpenRouter (GPT-3.5-turbo)
 - **Rate Limiting**: Upstash Redis
-
-### DevOps & Tools
-- **Deployment**: Vercel (Frontend), Convex Cloud (Backend)
-- **Version Control**: Git, GitHub
-- **Package Manager**: npm
-- **Code Quality**: ESLint, Prettier
 
 ---
 
@@ -120,24 +107,26 @@ Traditional event management platforms lack intelligent automation and often hav
 
 ### System Design
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
-│                         Client Layer                         │
-│  (Next.js 15 App Router + React 19 + Tailwind CSS)         │
+│                         Client Layer                        │
+│  (Next.js 15 App Router + React 19 + Tailwind CSS)          │
 └────────────────────┬────────────────────────────────────────┘
                      │
                      ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                      API Routes Layer                        │
-│  • /api/generate-event (AI Generation)                      │
+│                      API Routes Layer                       │
+│  • /api/generate-event (AI Generation + Rate Limiting)      │
 │  • /api/calendar/[slug] (ICS Generation)                    │
+│  • /api/stripe/checkout (Stripe Sessions)                   │
+│  • /api/webhooks/* (Stripe & Clerk Webhook Listeners)       │
 └────────────────────┬────────────────────────────────────────┘
                      │
                      ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                    Convex Backend Layer                      │
+│                    Convex Backend Layer                     │
 │  • Mutations (Write Operations)                             │
-│  • Queries (Read Operations)                                │
+│  • Queries (Read Operations - Realtime)                     │
 │  • Actions (External API Calls)                             │
 └────────────────────┬────────────────────────────────────────┘
                      │
@@ -145,29 +134,9 @@ Traditional event management platforms lack intelligent automation and often hav
         ▼            ▼            ▼
    ┌────────┐  ┌─────────┐  ┌──────────┐
    │ Clerk  │  │ Resend  │  │  Stripe  │
-   │  Auth  │  │  Email  │  │ Connect  │
+   │  Auth  │  │  Email  │  │ Checkout │
    └────────┘  └─────────┘  └──────────┘
 ```
-
-### Database Schema
-
-**Users Table**
-- Authentication (Clerk integration)
-- Onboarding preferences (location, interests)
-- Stripe Connect account tracking
-- Free event limit management
-
-**Events Table**
-- Event details (title, description, dates)
-- Location (physical/online with geocoding)
-- Capacity and ticketing (free/paid)
-- Unique slug generation for SEO-friendly URLs
-
-**Registrations Table**
-- User-event relationships
-- QR code generation for entry
-- Check-in status tracking
-- Approval workflow support
 
 ---
 
@@ -183,8 +152,8 @@ Traditional event management platforms lack intelligent automation and often hav
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/tanmay-7706/evenex.git
-   cd evenex
+   git clone https://github.com/tanmay-7706/EveNex.git
+   cd EveNex
    ```
 
 2. **Install dependencies**
@@ -202,23 +171,13 @@ Traditional event management platforms lack intelligent automation and often hav
    ```bash
    npx convex dev
    ```
-   This will:
-   - Create a new Convex project
-   - Set up the database schema
-   - Start the development backend
 
-5. **Set Convex environment variables**
-   ```bash
-   npx convex env set RESEND_API_KEY your_resend_key
-   npx convex env set STRIPE_SECRET_KEY your_stripe_key
-   ```
-
-6. **Run the development server**
+5. **Run the development server**
    ```bash
    npm run dev
    ```
 
-7. **Open your browser**
+6. **Open your browser**
    Navigate to [http://localhost:3000](http://localhost:3000)
 
 ---
@@ -235,7 +194,10 @@ NEXT_PUBLIC_CONVEX_URL=https://your-project.convex.cloud
 # Clerk Authentication
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
 CLERK_SECRET_KEY=sk_test_...
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
 CLERK_JWT_ISSUER_DOMAIN=https://your-domain.clerk.accounts.dev
+CLERK_WEBHOOK_SECRET=whsec_...
 
 # OpenRouter AI
 OPENROUTER_API_KEY=sk-or-v1-...
@@ -247,65 +209,34 @@ RESEND_API_KEY=re_...
 # Stripe Payments
 STRIPE_SECRET_KEY=sk_test_...
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
 
 # Upstash Redis (Rate Limiting)
 UPSTASH_REDIS_REST_URL=https://...upstash.io
 UPSTASH_REDIS_REST_TOKEN=...
 
+# Security Tokens
+QR_TOKEN_SECRET=any_random_32_character_string
+
 # Unsplash (Optional - for event images)
 NEXT_PUBLIC_UNSPLASH_ACCESS_KEY=...
 ```
-
-### Getting API Keys
-
-| Service | Purpose | Get Key |
-|---------|---------|---------|
-| Convex | Backend & Database | [convex.dev](https://convex.dev) |
-| Clerk | Authentication | [clerk.com](https://clerk.com) |
-| OpenRouter | AI Generation | [openrouter.ai](https://openrouter.ai) |
-| Resend | Email Delivery | [resend.com](https://resend.com) |
-| Stripe | Payments | [stripe.com](https://stripe.com) |
-| Upstash | Redis/Rate Limiting | [upstash.com](https://upstash.com) |
 
 ---
 
 ## 📁 Project Structure
 
-```
+```text
 evenex/
 ├── app/                          # Next.js App Router
 │   ├── (auth)/                   # Authentication pages
-│   │   ├── sign-in/
-│   │   └── sign-up/
-│   ├── (main)/                   # Protected routes
-│   │   ├── create-event/         # Event creation with AI
-│   │   ├── my-events/            # Organizer dashboard
-│   │   └── my-tickets/           # User tickets
-│   ├── (public)/                 # Public routes
-│   │   ├── events/[slug]/        # Event details page
-│   │   └── explore/              # Event discovery
-│   ├── api/                      # API routes
-│   │   ├── generate-event/       # AI event generation
-│   │   └── calendar/[slug]/      # ICS file generation
-│   ├── layout.js                 # Root layout with providers
-│   └── page.js                   # Landing page
-├── components/                   # React components
-│   ├── ui/                       # Shadcn UI components
-│   ├── event-card.jsx            # Reusable event card
-│   ├── header.jsx                # Navigation header
-│   ├── add-to-calendar-button.tsx # Calendar export
-│   └── ...
-├── convex/                       # Backend (Convex)
-│   ├── schema.js                 # Database schema
-│   ├── events.js                 # Event mutations/queries
-│   ├── registrations.js          # Registration logic
-│   ├── users.js                  # User management
-│   ├── actions.js                # External API actions
-│   └── ...
-├── lib/                          # Utility functions
-│   ├── utils.js                  # Helper functions
-│   ├── generateIcs.ts            # Calendar file generation
-│   └── data.js                   # Static data
+│   ├── (main)/                   # Protected routes (dashboard, tickets)
+│   ├── (public)/                 # Public routes (explore, event details)
+│   ├── api/                      # API & Webhook routes
+│   └── proxy.js                  # Next.js 16 Middleware for auth
+├── components/                   # React components (UI & Layout)
+├── convex/                       # Backend (Convex database schema & logic)
+├── lib/                          # Utility functions (QR Tokens, Emails)
 ├── hooks/                        # Custom React hooks
 ├── public/                       # Static assets
 └── .env.local                    # Environment variables
@@ -313,93 +244,27 @@ evenex/
 
 ---
 
-## 📚 API Documentation
-
-### Event Generation API
-
-**Endpoint**: `POST /api/generate-event`
-
-**Request Body**:
-```json
-{
-  "prompt": "A tech meetup for startup founders in Bangalore"
-}
-```
-
-**Response**:
-```json
-{
-  "title": "Startup Founders Tech Meetup",
-  "description": "Connect with fellow startup founders...",
-  "category": "tech",
-  "suggestedCapacity": 50,
-  "suggestedTicketType": "free"
-}
-```
-
-**Rate Limit**: 5 requests per minute per IP
-
-### Calendar Export API
-
-**Endpoint**: `GET /api/calendar/[slug]`
-
-**Response**: `.ics` file download
-
----
-
 ## 🚢 Deployment
 
-### Deploy to Vercel (Frontend)
+### Deploy Frontend (Vercel)
 
-1. **Push to GitHub**
-   ```bash
-   git push origin main
-   ```
+1. Push your code to GitHub.
+2. Import the repository into [Vercel](https://vercel.com).
+3. Add all environment variables from your `.env.local` to the Vercel Project Settings.
+4. Deploy!
 
-2. **Import to Vercel**
-   - Go to [vercel.com](https://vercel.com)
-   - Import your GitHub repository
-   - Add environment variables
-   - Deploy
+### Deploy Backend (Convex)
 
-3. **Update Convex URL**
-   ```bash
-   npx convex env set NEXT_PUBLIC_APP_URL https://your-domain.vercel.app
-   ```
-
-### Deploy Convex (Backend)
-
+Deploy your Convex functions to production:
 ```bash
 npx convex deploy
+```
+
+Set your production secrets in the Convex dashboard or via CLI:
+```bash
 npx convex env --prod set RESEND_API_KEY your_key
 npx convex env --prod set STRIPE_SECRET_KEY your_key
 ```
-
----
-
-## 🎓 Learning Outcomes
-
-This project demonstrates proficiency in:
-
-### Technical Skills
-- ✅ **Full-Stack Development**: End-to-end application architecture
-- ✅ **Modern React Patterns**: Server Components, Suspense, Streaming
-- ✅ **Real-time Systems**: Convex reactive queries and subscriptions
-- ✅ **API Integration**: RESTful APIs, webhooks, third-party services
-- ✅ **Database Design**: Schema modeling, indexing, relationships
-- ✅ **Authentication & Authorization**: OAuth, JWT, role-based access
-- ✅ **Payment Processing**: Stripe Connect, multi-party payments
-- ✅ **Email Systems**: Transactional emails, HTML templates
-- ✅ **AI Integration**: Prompt engineering, API orchestration
-- ✅ **Security**: Rate limiting, CSRF protection, input validation
-
-### Software Engineering Practices
-- ✅ **Clean Code**: Modular, reusable components
-- ✅ **Error Handling**: Graceful degradation, user feedback
-- ✅ **Performance**: Optimistic updates, lazy loading, caching
-- ✅ **Testing**: Edge case handling, validation
-- ✅ **Documentation**: Comprehensive README, inline comments
-- ✅ **Version Control**: Git workflow, meaningful commits
 
 ---
 
@@ -425,18 +290,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Tanmay Singh**
 - GitHub: [@tanmay-7706](https://github.com/tanmay-7706)
-- LinkedIn: [Your LinkedIn](https://linkedin.com/in/yourprofile)
-- Portfolio: [yourportfolio.com](https://yourportfolio.com)
-
----
-
-## 🙏 Acknowledgments
-
-- [Next.js](https://nextjs.org/) - React framework
-- [Convex](https://convex.dev/) - Backend platform
-- [Clerk](https://clerk.com/) - Authentication
-- [Shadcn UI](https://ui.shadcn.com/) - Component library
-- [Vercel](https://vercel.com/) - Deployment platform
 
 ---
 

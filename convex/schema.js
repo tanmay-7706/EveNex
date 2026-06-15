@@ -7,6 +7,7 @@ export default defineSchema({
     // Clerk auth
     email: v.string(),
     tokenIdentifier: v.string(), // Clerk user ID for auth
+    clerkId: v.optional(v.string()), // Clerk user ID for webhook sync
     name: v.string(),
     imageUrl: v.optional(v.string()),
 
@@ -34,7 +35,9 @@ export default defineSchema({
     // Timestamps
     createdAt: v.number(),
     updatedAt: v.number(),
-  }).index("by_token", ["tokenIdentifier"]), // Primary auth lookup
+  })
+    .index("by_token", ["tokenIdentifier"]) // Primary auth lookup
+    .index("by_clerk_id", ["clerkId"]), // Clerk webhook lookup
 
   // Events table
   events: defineTable({
@@ -100,7 +103,12 @@ export default defineSchema({
     attendeeEmail: v.string(),
 
     // QR Code for entry
-    qrCode: v.string(), // Unique ID for QR
+    qrCode: v.string(), // Signed JWT token for QR
+
+    // Stripe payment
+    stripeSessionId: v.optional(v.string()),
+    amountPaid: v.optional(v.number()),
+    currency: v.optional(v.string()),
 
     // Check-in
     checkedIn: v.boolean(),
@@ -121,5 +129,6 @@ export default defineSchema({
     .index("by_event", ["eventId"])
     .index("by_user", ["userId"])
     .index("by_event_user", ["eventId", "userId"])
-    .index("by_qr_code", ["qrCode"], { unique: true }),
+    .index("by_qr_code", ["qrCode"], { unique: true })
+    .index("by_stripe_session", ["stripeSessionId"]),
 });

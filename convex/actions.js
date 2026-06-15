@@ -71,14 +71,16 @@ export const sendTicketEmail = action({
 
       if (error) {
         console.error("Resend error:", error);
-        throw new Error(`Email failed: ${error.message}`);
+        // Log but don't throw — email failure should not block registration
+        return { success: false, error: error.message };
       }
 
       console.log("Email sent successfully:", data.id);
       return { success: true, emailId: data.id };
     } catch (error) {
+      // Log but never throw — email failure should not block registration
       console.error("Email action failed:", error);
-      throw new Error(`Failed to send email: ${error.message}`);
+      return { success: false, error: error.message };
     }
   },
 });

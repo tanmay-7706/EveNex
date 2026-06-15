@@ -28,12 +28,16 @@ export const sendTicketConfirmation = action({
       });
 
       if (error) {
-        throw new Error(`Email failed: ${error.message}`);
+        // Log but don't throw — email failure should not block registration
+        console.error('Email send error:', error);
+        return { success: false, error: error.message };
       }
 
       return { success: true, emailId: data.id };
     } catch (error) {
-      throw new Error(`Failed to send email: ${error.message}`);
+      // Log but never throw — email failure should not block registration
+      console.error('Failed to send ticket confirmation email:', error);
+      return { success: false, error: error.message };
     }
   },
 });

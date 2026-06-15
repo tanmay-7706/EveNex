@@ -2,10 +2,81 @@ import { internal } from "./_generated/api";
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
-// Generate unique QR code ID
+// Generate unique QR code ID (fallback for free events)
 function generateQRCode() {
   return `EVT-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
 }
+
+// Called by Stripe webhook — idempotent registration for paid events
+export const createFromWebhook = mutation({
+  args: {
+    eventId: v.string(), // String from Stripe metadata, not v.id
+    userId: v.string(), // Clerk user ID from Stripe metadata
+    stripeSessionId: v.string(),
+    amountPaid: v.number(),
+    currency: v.string(),
+  },
+  handler: async (ctx, args) => {
+    // Idempotency check: don't create duplicate registrations
+    const existing = await ctx.db
+      .query('registrations')
+      .withIndex('by_stripe_session', (q) =>
+        q.eq('stripeSessionId', args.stripeSessionId)
+      )
+      .first();
+
+    if (existing) {
+      console.log('Registration already exists for session:', args.stripeSessionId);
+      return existing._id;
+    }
+
+    // Resolve Convex event ID
+    const event = await ctx.db.get(args.eventId);
+    if (!event) throw new Error('Event not found');
+
+    // Find the Convex user by their Clerk tokenIdentifier
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_token', (q) =>
+        q.eq('tokenIdentifier', args.userId)
+      )
+      .first();
+
+    // Fall back: try by_clerk_id
+    const resolvedUser = user || await ctx.db
+      .query('users')
+      .withIndex('by_clerk_id', (q) =>
+        q.eq('clerkId', args.userId)
+      )
+      .first();
+
+    if (!resolvedUser) throw new Error('User not found');
+
+    // Create the registration
+    const qrCode = generateQRCode();
+    const registrationId = await ctx.db.insert('registrations', {
+      eventId: args.eventId,
+      userId: resolvedUser._id,
+      attendeeName: resolvedUser.name || 'Attendee',
+      attendeeEmail: resolvedUser.email || '',
+      qrCode,
+      stripeSessionId: args.stripeSessionId,
+      amountPaid: args.amountPaid,
+      currency: args.currency,
+      status: 'confirmed',
+      checkedIn: false,
+      registeredAt: Date.now(),
+    });
+
+    // Update event registration count
+    await ctx.db.patch(args.eventId, {
+      registrationCount: (event.registrationCount || 0) + 1,
+    });
+
+    return registrationId;
+  },
+});
+
 
 // Register for an event
 export const registerForEvent = mutation({

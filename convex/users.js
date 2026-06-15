@@ -116,3 +116,66 @@ export const updateStripeAccount = mutation({
     return args.userId;
   },
 });
+
+// --- Clerk Webhook Mutations (server-side user sync) ---
+
+// Called by Clerk webhook on user.created — idempotent
+export const createFromClerk = mutation({
+  args: {
+    clerkId: v.string(),
+    email: v.string(),
+    name: v.string(),
+    imageUrl: v.string(),
+  },
+  handler: async (ctx, args) => {
+    // Idempotency: don't create duplicate users
+    const existing = await ctx.db
+      .query('users')
+      .withIndex('by_clerk_id', (q) => q.eq('clerkId', args.clerkId))
+      .first();
+
+    if (existing) return existing._id;
+
+    return await ctx.db.insert('users', {
+      clerkId: args.clerkId,
+      email: args.email,
+      tokenIdentifier: args.clerkId, // Use clerkId as tokenIdentifier fallback
+      name: args.name || 'Anonymous',
+      imageUrl: args.imageUrl,
+      hasCompletedOnboarding: false,
+      freeEventsCreated: 0,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+  },
+});
+
+// Called by Clerk webhook on user.updated
+export const updateFromClerk = mutation({
+  args: { clerkId: v.string(), name: v.string(), imageUrl: v.string() },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_clerk_id', (q) => q.eq('clerkId', args.clerkId))
+      .first();
+    if (user) {
+      await ctx.db.patch(user._id, {
+        name: args.name,
+        imageUrl: args.imageUrl,
+        updatedAt: Date.now(),
+      });
+    }
+  },
+});
+
+// Called by Clerk webhook on user.deleted
+export const deleteFromClerk = mutation({
+  args: { clerkId: v.string() },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_clerk_id', (q) => q.eq('clerkId', args.clerkId))
+      .first();
+    if (user) await ctx.db.delete(user._id);
+  },
+});
